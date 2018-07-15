@@ -11,13 +11,20 @@ import android.support.v4.view.ViewPager;
 import android.view.View;
 import android.widget.Toast;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.List;
 import java.util.logging.MemoryHandler;
 
 public final class ListActivity extends BaseActivity {
 
+    static public ListActivity instance;
+
     private ChatsFragment chatFrag;
     private FriendsFragment friFrag;
+
+    public ChatActivity thischat;
 
     public void onAddFriendPressed(View view) {
         startActivity(new Intent(this, AddFriendActivity.class));
@@ -28,8 +35,26 @@ public final class ListActivity extends BaseActivity {
     }
 
     @Override
+    protected void onDestroy() {
+        instance = null;
+        super.onDestroy();
+    }
+
+    public void updateChats() {
+        chatFrag.update();
+    }
+
+    @Override
+    public void onBackPressed() {
+        CommonUtils.toast(this, "正在关闭");
+        Client.get().goDie();
+        super.onBackPressed();
+    }
+
+    @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        instance = this;
         setContentView(R.layout.list_activity);
 
         ViewPager pager = findViewById(R.id.pager);
@@ -80,6 +105,34 @@ public final class ListActivity extends BaseActivity {
                 case 80: {
                     List<Friend> list = (List<Friend>) msg.obj;
                     friFrag.updateFriends(list);
+                    break;
+                }
+                case 82: {
+                    JSONObject jso = (JSONObject) msg.obj;
+                    System.out.print(jso.toString());
+                    CommonUtils.toast(ListActivity.this, jso.toString());
+                    try {
+                        int id = jso.getInt("from");
+                        Chat chat = Datas.getChat(id, 1);
+                        if (chat == null) {
+                            chat = new Chat();
+                            chat.type = 1;
+                            chat.id = id;
+                            Datas.chats.add(chat);
+                        }
+                        chat.unread = true;
+                        Chat.Message m = new Chat.Message();
+                        m.sender = id;
+                        m.type = jso.getInt("type");
+                        m.text = jso.getString("content");
+                        chat.messages.add(m);
+                        ListActivity.this.updateChats();
+                        if (ListActivity.this.thischat != null) {
+                            ListActivity.this.thischat.onNewMessage(m);
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }

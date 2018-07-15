@@ -1,5 +1,6 @@
 package ac0888bfc.chatcat;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -19,6 +20,7 @@ public final class ChatsFragment extends Fragment {
 
     private View emptyView;
     private RecyclerView recyclerView;
+    private CatAdapter ada;
 
     @Nullable
     @Override
@@ -29,10 +31,22 @@ public final class ChatsFragment extends Fragment {
         emptyView = v.findViewById(R.id.empty);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(inflater.getContext()));
-        recyclerView.setAdapter(new CatAdapter());
+        ada = new CatAdapter();
+        recyclerView.setAdapter(ada);
         toggleEmpty(true);
 
         return v;
+    }
+
+    public void update() {
+        toggleEmpty(Datas.chats.isEmpty());
+        if (null != ListActivity.instance) {
+            ChatActivity a = ListActivity.instance.thischat;
+            if (a != null) {
+                a.chat.unread = false;
+            }
+        }
+        ada.notifyDataSetChanged();
     }
 
     private void toggleEmpty(boolean empty) {
@@ -47,10 +61,7 @@ public final class ChatsFragment extends Fragment {
 
     private class CatAdapter extends RecyclerView.Adapter<CatAdapter.ViewHolder> {
 
-        private List<Chat> chats;
-
         public CatAdapter() {
-            chats = new ArrayList<>(128);
         }
 
         @NonNull
@@ -62,27 +73,36 @@ public final class ChatsFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            Chat chat = chats.get(position);
-            holder.name.setText(chat.name);
+            Chat chat = Datas.chats.get(position);
+            holder.name.setText(Integer.toString(chat.id));
             holder.unread.setVisibility(chat.unread ? View.VISIBLE : View.INVISIBLE);
+            holder.id = chat.id;
+            holder.type = chat.type;
         }
 
         @Override
         public int getItemCount() {
-            return chats.size();
+            return Datas.chats.size();
         }
 
-        class ViewHolder extends RecyclerView.ViewHolder {
+        class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
             TextView name;
             TextView unread;
+            int id;
+            int type;
 
             public ViewHolder(LinearLayout v) {
                 super(v);
                 name = v.findViewById(R.id.text);
                 unread = v.findViewById(R.id.text2);
+                v.setOnClickListener(this);
             }
 
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(getActivity(), ChatActivity.class).putExtra("id", id).putExtra("type", type));
+            }
         }
 
     }

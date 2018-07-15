@@ -12,6 +12,7 @@ public final class FriendActivity extends BaseActivity {
 
     public void onChatPressed(View v) {
         startActivity(new Intent(this, ChatActivity.class).putExtra("id", id).putExtra("type", 1));
+        finish();
     }
 
     @Override

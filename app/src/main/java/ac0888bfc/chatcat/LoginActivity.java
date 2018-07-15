@@ -92,10 +92,13 @@ public final class LoginActivity extends BaseActivity {
 
     private class LoginTask extends AsyncTask<Login, Void, Boolean> {
 
+        int id;
+
         @Override
         protected Boolean doInBackground(Login... logins) {
             Client client = Client.get();
             try {
+                id = logins[0].id;
                 return client.login(logins[0].server, logins[0].port, logins[0].id, logins[0].password);
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -107,7 +110,7 @@ public final class LoginActivity extends BaseActivity {
         protected void onPostExecute(Boolean aBoolean) {
             super.onPostExecute(aBoolean);
             if (aBoolean) {
-                startActivity(new Intent(LoginActivity.this, ListActivity.class));
+                startActivity(new Intent(LoginActivity.this, ListActivity.class).putExtra("me", id));
                 finish();
             } else {
                 Toast.makeText(LoginActivity.this, "登录失败", Toast.LENGTH_SHORT).show();

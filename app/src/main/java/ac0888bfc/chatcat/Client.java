@@ -251,6 +251,41 @@ public final class Client {
         });
     }
 
+    public void sendMessage(Chat.Message msg, int toid, int totype) {
+        tx.enqueue(() -> {
+            try {
+                out.write(42);
+                JSONObject jso = new JSONObject();
+                jso.put("to", toid);
+                jso.put("type", msg.type);
+                jso.put("content", msg.text);
+                sendLengthAndJson(out, jso);
+            } catch (Exception e) {
+                e.printStackTrace();
+                reset();
+            }
+        });
+    }
+
+    public void goDie() {
+        Thread th = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        th.start();
+        try {
+            th.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     private class RxThread extends Thread {
 
         private InputStream stream;
@@ -290,6 +325,14 @@ public final class Client {
                             evHandler.sendMessage(msg);
                         }
                         break;
+                        case 82: {
+                            JSONObject o = recvLengthAndJson(stream);
+                            Message msg = new Message();
+                            msg.what = 82;
+                            msg.obj = o;
+                            evHandler.sendMessage(msg);
+                            break;
+                        }
                         default:
                             Log.e("eee", "ee=");
                             throw new IOException("wwwwwwwwwwwww");
